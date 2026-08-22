@@ -1,7 +1,9 @@
-from app.models.attendance import Attendance
-from app.models.employee import Employee
-from app.models.leave import LeaveRequest
-from app.models.salary import SalaryStructure
-from app.models.user import User
+"""Import models so SQLAlchemy and Flask-Migrate discover all metadata."""
 
-__all__ = ["Attendance", "Employee", "LeaveRequest", "SalaryStructure", "User"]
+from .attendance import Attendance
+from .employee import Employee
+from .leave import LeaveRequest
+from .salary import SalaryStructure
+from .user import User, UserRole
+
+__all__ = ["Attendance", "Employee", "LeaveRequest", "SalaryStructure", "User", "UserRole"]

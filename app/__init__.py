@@ -1,25 +1,38 @@
+"""Dayflow application factory."""
+
 from flask import Flask
-from flask_migrate import Migrate
-from dotenv import load_dotenv
 
-from app.config import Config
-from app.extensions import db
-from app.routes.health_routes import health_bp
-from app.routes.leave_routes import leave_bp
-from app.routes.salary_routes import salary_bp
-
-migrate = Migrate()
+from .config import Config
+from .extensions import db, migrate
 
 
-def create_app(config_class=Config):
-    load_dotenv()
+def create_app(config_override: dict | type[Config] | None = None) -> Flask:
+    """Create and configure the shared Dayflow application."""
     app = Flask(__name__)
-    app.config.from_object(config_class)
+    app.config.from_object(Config)
+
+    if isinstance(config_override, dict):
+        app.config.update(config_override)
+    elif config_override is not None:
+        app.config.from_object(config_override)
+
+    if not app.config.get("SECRET_KEY"):
+        raise RuntimeError("SECRET_KEY must be set in the environment.")
+
     db.init_app(app)
     migrate.init_app(app, db)
-    app.register_blueprint(health_bp)
-    app.register_blueprint(leave_bp)
-    app.register_blueprint(salary_bp)
-    with app.app_context():
-        from app import models
+
+    # Import every current model before Flask-Migrate inspects SQLAlchemy metadata.
+    from . import models  # noqa: F401
+    from .routes.attendance_routes import attendance_bp
+    from .routes.auth_routes import auth_bp
+    from .routes.employee_routes import employee_bp
+    from .routes.health_routes import health_bp
+    from .routes.leave_routes import leave_bp
+    from .routes.salary_routes import salary_bp
+
+    for blueprint in (health_bp, auth_bp, employee_bp, salary_bp, leave_bp, attendance_bp):
+        if blueprint.name not in app.blueprints:
+            app.register_blueprint(blueprint)
+
     return app
