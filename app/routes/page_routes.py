@@ -26,6 +26,12 @@ def employee_leaves():
     return render_template("employee_leaves.html")
 
 
+@pages_bp.get("/attendance")
+@require_roles("EMPLOYEE")
+def employee_attendance():
+    return render_template("attendance/dashboard.html")
+
+
 @pages_bp.get("/admin/leaves")
 @require_roles("ADMIN", "HR")
 def admin_leaves():
