@@ -21,8 +21,18 @@ def app():
     app = create_app(TestConfig)
     with app.app_context():
         db.create_all()
-        admin = User(email="admin@test.local", login_id="ADMIN", password_hash="hash", role="ADMIN")
-        employee_user = User(email="employee@test.local", login_id="EMPLOYEE", password_hash="hash", role="EMPLOYEE")
+        admin = User(
+            email="admin@test.local",
+            login_id="ADMIN",
+            password_hash="hash",
+            role="ADMIN",
+        )
+        employee_user = User(
+            email="employee@test.local",
+            login_id="EMPLOYEE",
+            password_hash="hash",
+            role="EMPLOYEE",
+        )
         db.session.add_all([admin, employee_user])
         db.session.flush()
         db.session.add(Employee(user_id=employee_user.id, first_name="Jane", last_name="Doe", department="Engineering", job_title="Developer", date_of_joining=date.today()))
