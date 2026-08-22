@@ -24,12 +24,14 @@ def create_app(config_override: dict | type[Config] | None = None) -> Flask:
 
     # Import every current model before Flask-Migrate inspects SQLAlchemy metadata.
     from . import models  # noqa: F401
+    from .routes.attendance_routes import attendance_bp
     from .routes.auth_routes import auth_bp
     from .routes.employee_routes import employee_bp
     from .routes.health_routes import health_bp
+    from .routes.leave_routes import leave_bp
     from .routes.salary_routes import salary_bp
 
-    for blueprint in (health_bp, auth_bp, employee_bp, salary_bp):
+    for blueprint in (health_bp, auth_bp, employee_bp, salary_bp, leave_bp, attendance_bp):
         if blueprint.name not in app.blueprints:
             app.register_blueprint(blueprint)
 
