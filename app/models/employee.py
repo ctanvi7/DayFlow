@@ -1,17 +1,20 @@
 """Employee profile model linked one-to-one with a user account."""
 
+from importlib.util import find_spec
+
 from app.extensions import db
+from app.models.user import PRIMARY_KEY_TYPE
 
 
 class Employee(db.Model):
     __tablename__ = "employees"
 
-    id = db.Column(db.BigInteger, primary_key=True)
-    user_id = db.Column(db.BigInteger, db.ForeignKey("users.id"), unique=True, nullable=False)
+    id = db.Column(PRIMARY_KEY_TYPE, primary_key=True)
+    user_id = db.Column(PRIMARY_KEY_TYPE, db.ForeignKey("users.id"), unique=True, nullable=False)
 
     first_name = db.Column(db.String(80), nullable=False)
     last_name = db.Column(db.String(80), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)
     date_of_birth = db.Column(db.Date, nullable=True)
     gender = db.Column(db.String(50), nullable=True)
     nationality = db.Column(db.String(100), nullable=True)
@@ -20,8 +23,8 @@ class Employee(db.Model):
     department = db.Column(db.String(100), nullable=False)
     job_title = db.Column(db.String(100), nullable=False)
     manager_name = db.Column(db.String(160), nullable=True)
-    company = db.Column(db.String(160), nullable=False)
-    location = db.Column(db.String(160), nullable=False)
+    company = db.Column(db.String(160), nullable=True)
+    location = db.Column(db.String(160), nullable=True)
     date_of_joining = db.Column(db.Date, nullable=False)
 
     address = db.Column(db.Text, nullable=True)
@@ -42,6 +45,11 @@ class Employee(db.Model):
     )
 
     user = db.relationship("User", back_populates="employee")
+
+    # The salary model belongs to a parallel feature. Defining this only when
+    # that module exists preserves both the identity-only and merged branches.
+    if find_spec("app.models.salary") is not None:
+        salary = db.relationship("SalaryStructure", back_populates="employee", uselist=False)
 
     def to_dict(self) -> dict:
         """Return the standard employee profile without private banking identifiers."""

@@ -19,6 +19,7 @@ class Config:
     SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///dayflow_dev.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
     COMPANY_CODE = os.getenv("COMPANY_CODE", "OI")
     COMPANY_NAME = os.getenv("COMPANY_NAME", "Odoo India")
@@ -28,3 +29,7 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
+
+    DEMO_ADMIN_EMAIL = os.getenv("DEMO_ADMIN_EMAIL", "admin@example.local")
+    DEMO_ADMIN_LOGIN_ID = os.getenv("DEMO_ADMIN_LOGIN_ID", "OIADMIN")
+    DEMO_ADMIN_PASSWORD = os.getenv("DEMO_ADMIN_PASSWORD")

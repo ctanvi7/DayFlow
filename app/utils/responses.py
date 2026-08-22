@@ -35,3 +35,16 @@ def error_response(
             "errors": {} if errors is None else errors,
         }
     ), status_code
+
+
+def response(
+    success: bool,
+    data: Any = None,
+    message: str = "Success",
+    errors: dict[str, Any] | None = None,
+    status: int = 200,
+):
+    """Compatibility wrapper for existing blueprints using ``response``."""
+    if success:
+        return success_response(data=data, message=message, status_code=status)
+    return error_response(message=message, errors=errors, status_code=status)

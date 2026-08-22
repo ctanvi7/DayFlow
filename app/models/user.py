@@ -7,6 +7,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 
+PRIMARY_KEY_TYPE = db.BigInteger().with_variant(db.Integer, "sqlite")
+
 
 class UserRole(str, Enum):
     ADMIN = "ADMIN"
@@ -17,7 +19,7 @@ class UserRole(str, Enum):
 class User(db.Model):
     __tablename__ = "users"
 
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(PRIMARY_KEY_TYPE, primary_key=True)
     login_id = db.Column(db.String(24), unique=True, index=True, nullable=False)
     email = db.Column(db.String(255), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
