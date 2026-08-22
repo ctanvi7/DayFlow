@@ -1,0 +1,30 @@
+"""Environment-backed application configuration."""
+
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+def _env_int(name: str, default: int) -> int:
+    """Read an integer environment variable, falling back safely for development."""
+    try:
+        return int(os.getenv(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///dayflow_dev.db")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    COMPANY_CODE = os.getenv("COMPANY_CODE", "OI")
+    COMPANY_NAME = os.getenv("COMPANY_NAME", "Odoo India")
+    DEFAULT_BREAK_MINUTES = _env_int("DEFAULT_BREAK_MINUTES", 60)
+    SCHEDULED_WORK_MINUTES = _env_int("SCHEDULED_WORK_MINUTES", 480)
+
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true"
