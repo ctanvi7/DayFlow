@@ -96,7 +96,6 @@ def test_attendance_row_persists_for_an_employee_and_date(app):
         assert saved.check_out_at.hour == 17
         assert saved.status == "PRESENT"
         assert saved.employee.id == employee.id
-
 def test_duplicate_persistent_check_in_rolls_back_cleanly(app):
     with app.app_context():
         employee = Employee.query.first()

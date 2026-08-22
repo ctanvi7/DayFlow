@@ -41,13 +41,12 @@ function setFeedback(message, isError = false) {
 
 async function requestAttendance(url, options = {}) {
   const response = await fetch(url, {
+    credentials: "same-origin",
     headers: { Accept: "application/json", ...options.headers },
     ...options,
   });
   const body = await response.json().catch(() => null);
-  if (!response.ok || !body?.success) {
-    throw new Error(body?.message || "Unable to update attendance. Please try again.");
-  }
+  if (!response.ok || !body?.success) throw new Error(body?.message || "Unable to update attendance. Please try again.");
   return body.data;
 }
 
@@ -57,10 +56,19 @@ function renderAttendanceHistory() {
   const records = [...attendanceRecords].sort((first, second) => second.attendance_date.localeCompare(first.attendance_date));
   history.replaceChildren();
   emptyState.hidden = records.length !== 0;
-
   records.forEach((record) => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${formatDate(record.attendance_date)}</td><td>${formatTime(record.check_in_at)}</td><td>${formatTime(record.check_out_at)}</td><td>${formatMinutes(record.work_minutes)}</td><td>${formatMinutes(record.extra_minutes)}</td><td><span class="status-badge ${statusClass(record.status)}">${statusLabel(record.status)}</span></td>`;
+    [formatDate(record.attendance_date), formatTime(record.check_in_at), formatTime(record.check_out_at), formatMinutes(record.work_minutes), formatMinutes(record.extra_minutes)].forEach((value) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    });
+    const statusCell = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = `status-badge ${statusClass(record.status)}`;
+    badge.textContent = statusLabel(record.status);
+    statusCell.append(badge);
+    row.append(statusCell);
     history.append(row);
   });
 }
@@ -70,12 +78,11 @@ function updateSummary() {
     summary.workingDays += 1;
     summary.workMinutes += record.work_minutes;
     summary.extraMinutes += record.extra_minutes;
-    if (record.status === "PRESENT") summary.present += 1;
+    if (record.status === "PRESENT" || record.status === "CHECKED_OUT") summary.present += 1;
     if (record.status === "ABSENT") summary.absent += 1;
     if (record.status === "LEAVE") summary.leave += 1;
     return summary;
   }, { workingDays: 0, present: 0, absent: 0, leave: 0, workMinutes: 0, extraMinutes: 0 });
-
   document.querySelector("#total-working-days").textContent = totals.workingDays;
   document.querySelector("#present-days").textContent = totals.present;
   document.querySelector("#absent-days").textContent = totals.absent;
@@ -89,7 +96,6 @@ function updateTodayStatus() {
   const badge = document.querySelector("#today-status");
   const checkInButton = document.querySelector("#check-in-button");
   const checkOutButton = document.querySelector("#check-out-button");
-
   badge.className = `status-badge ${statusClass(currentStatus)}`;
   badge.textContent = currentStatus === "NOT_CHECKED_IN" ? "Not checked in" : statusLabel(currentStatus);
   document.querySelector("#check-in-time").textContent = formatTime(record?.check_in_at);
@@ -103,8 +109,8 @@ function updateTodayStatus() {
 async function loadAttendance() {
   const now = new Date();
   const data = await requestAttendance(`/api/attendance/me?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
-  attendanceRecords = data.attendance;
-  currentStatus = data.current_status;
+  attendanceRecords = data.attendance || [];
+  currentStatus = data.current_status || "NOT_CHECKED_IN";
   renderAttendanceHistory();
   updateSummary();
   updateTodayStatus();

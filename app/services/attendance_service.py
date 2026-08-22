@@ -124,7 +124,10 @@ class AttendanceService:
         ).first()
         if approved_leave is not None:
             return "LEAVE"
-        if self.get_today_attendance(employee_id, today) is not None:
+        today_record = self.get_today_attendance(employee_id, today)
+        if today_record is not None and today_record.check_out_at is not None:
+            return "CHECKED_OUT"
+        if today_record is not None:
             return PRESENT
         if now.weekday() not in current_app.config["WORKING_DAYS"]:
             return "NOT_CHECKED_IN"

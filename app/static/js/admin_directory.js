@@ -17,6 +17,7 @@
   const statusLabels = {
     LEAVE: "On leave",
     PRESENT: "Present",
+    CHECKED_OUT: "Checked Out",
     ABSENT: "Absent",
     NOT_CHECKED_IN: "Not checked in",
   };

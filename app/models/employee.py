@@ -42,7 +42,6 @@ class Employee(db.Model):
     user = db.relationship("User", back_populates="employee")
     salary = db.relationship("SalaryStructure", back_populates="employee", uselist=False, cascade="all, delete-orphan")
     attendance_records = db.relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
-
     def to_dict(self) -> dict:
         """Return the standard employee profile without private banking identifiers."""
         return {

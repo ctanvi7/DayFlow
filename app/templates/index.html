@@ -10,8 +10,17 @@
   <main class="page-shell">
     <section class="card intro-card">
       <h1>DayFlow</h1>
-      <p>Please sign in through the application’s authentication flow to access leave management.</p>
+      <p>Sign in to manage your workday.</p>
+      <form id="login-form" class="login-form">
+        <label for="login-id">Login ID or email</label>
+        <input id="login-id" name="login_id" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button type="submit">Sign in</button>
+        <p id="login-feedback" class="login-feedback" role="alert" aria-live="polite"></p>
+      </form>
     </section>
   </main>
+  <script src="{{ url_for('static', filename='js/login.js') }}" defer></script>
 </body>
 </html>

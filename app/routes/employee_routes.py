@@ -15,11 +15,13 @@ from app.services.employee_service import (
     serialize_employee_profile,
     update_employee_profile,
 )
+from app.services.attendance_service import AttendanceService
 from app.utils.auth import login_required, require_roles
 from app.utils.responses import error_response, response, success_response
 
 
 employee_bp = Blueprint("employees", __name__, url_prefix="/api/employees")
+attendance_service = AttendanceService()
 
 
 @employee_bp.get("")
@@ -49,7 +51,7 @@ def list_employees():
                 "department": employee.department,
                 "job_title": employee.job_title,
                 "profile_image_path": employee.profile_image_path,
-                "current_status": "NOT_CHECKED_IN",
+                "current_status": attendance_service.get_current_status(employee.id),
             }
             for employee in employees
         ],
