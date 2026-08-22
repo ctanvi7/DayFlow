@@ -3,15 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>DayFlow</title>
+  <title>DayFlow | Work flows better together</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
 <body>
-  <main class="page-shell">
-    <section class="card intro-card">
-      <h1>DayFlow</h1>
-      <p>Please sign in through the application’s authentication flow to access leave management.</p>
+  <main class="login-page">
+    <section class="login-intro">
+      <div class="brand"><span class="brand-mark">D</span><span>DayFlow</span></div>
+      <p class="eyebrow">People operations, simplified</p>
+      <h1>Make every workday flow.</h1>
+      <p class="hero-copy">Manage leave, employee details, and day-to-day HR tasks in one calm, clear workspace.</p>
+      <div class="feature-list">
+        <span>✓ Request and review leave</span>
+        <span>✓ Keep employee records organised</span>
+        <span>✓ Built for your whole team</span>
+      </div>
+    </section>
+    <section class="login-panel card">
+      <p class="eyebrow">Welcome back</p>
+      <h2>Sign in to DayFlow</h2>
+      <p class="muted">Use your login ID or work email to continue.</p>
+      <form class="login-form" data-login-form>
+        <label>Login ID or email<input name="login_id" autocomplete="username" placeholder="e.g. OIADMIN" required></label>
+        <label>Password<input name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required></label>
+        <p class="form-message" role="status" aria-live="polite" data-login-message></p>
+        <button type="submit">Sign in <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="login-help">Need access? Contact your DayFlow administrator.</p>
     </section>
   </main>
+  <script src="{{ url_for('static', filename='js/login.js') }}" defer></script>
 </body>
 </html>

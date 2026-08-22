@@ -52,6 +52,13 @@ def set_session(client, user):
         session["user"] = user
 
 
+def test_landing_page_has_sign_in_form(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"data-login-form" in response.data
+    assert b"js/login.js" in response.data
+
+
 def test_employee_leave_page_has_form_and_script(client, users):
     set_session(client, users["employee"])
     response = client.get("/leaves")
