@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leave Requests | DayFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+</head>
+<body>
+  <main class="page-shell" data-leave-screen="admin">
+    <header class="page-header"><h1>Leave Requests</h1><p>Review employee leave requests.</p><a href="{{ url_for('pages.admin_employees') }}">Employee directory</a></header>
+    <p class="leave-feedback" role="status" aria-live="polite" data-leave-feedback></p>
+    <form class="card filter-grid" data-leave-filters>
+      <label>Status<select name="status"><option value="">All statuses</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option></select></label>
+      <label>Leave type<select name="leave_type"><option value="">All types</option><option value="PAID">Paid</option><option value="SICK">Sick</option><option value="UNPAID">Unpaid</option></select></label>
+      <label>Employee<input name="search" type="search" placeholder="Search by name"></label>
+      <label>From<input name="start_date" type="date"></label>
+      <label>To<input name="end_date" type="date"></label>
+    </form>
+    <section class="leave-section"><div class="leave-list" data-leave-list></div></section>
+  </main>
+  <script src="{{ url_for('static', filename='js/leave.js') }}" defer></script>
+</body>
+</html>
