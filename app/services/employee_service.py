@@ -4,12 +4,17 @@ from typing import Any
 
 from flask import current_app
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.extensions import db
 from app.models import Employee, User, UserRole
 from app.utils.id_generator import generate_login_id, generate_temporary_password
-from app.utils.validators import validate_employee_payload
+from app.utils.validators import (
+    EMPLOYEE_PROFILE_FIELDS,
+    EMPLOYEE_SELF_EDITABLE_FIELDS,
+    validate_employee_payload,
+    validate_employee_profile_update,
+)
 
 
 class EmployeeValidationError(ValueError):
@@ -22,6 +27,68 @@ class EmployeeValidationError(ValueError):
 
 class DuplicateEmployeeError(ValueError):
     """Raised when an employee email already belongs to an account."""
+
+
+class EmployeeNotFoundError(LookupError):
+    """Raised when a requested employee profile does not exist."""
+
+
+class EmployeeAccessError(PermissionError):
+    """Raised when a user is not allowed to access an employee profile."""
+
+
+class EmployeeUpdateError(RuntimeError):
+    """Raised when a profile update cannot be committed safely."""
+
+
+def _role_value(user: User) -> str:
+    return user.role.value if isinstance(user.role, UserRole) else str(user.role).upper()
+
+
+def get_employee_profile_for_user(requesting_user: User, employee_id: int) -> Employee:
+    """Return an employee only when the requester is allowed to see it."""
+    employee = db.session.get(Employee, employee_id)
+    if employee is None:
+        raise EmployeeNotFoundError("Employee not found.")
+
+    role = _role_value(requesting_user)
+    if role in {UserRole.ADMIN.value, UserRole.HR.value}:
+        return employee
+    if role == UserRole.EMPLOYEE.value:
+        own_employee = requesting_user.employee
+        if own_employee is not None and own_employee.id == employee.id:
+            return employee
+
+    raise EmployeeAccessError("You do not have permission to access this employee profile.")
+
+
+def update_employee_profile(requesting_user: User, employee: Employee, payload: dict[str, Any]) -> Employee:
+    """Validate and persist an authorized profile update."""
+    role = _role_value(requesting_user)
+    allowed_fields = (
+        EMPLOYEE_PROFILE_FIELDS
+        if role in {UserRole.ADMIN.value, UserRole.HR.value}
+        else EMPLOYEE_SELF_EDITABLE_FIELDS
+    )
+    data, errors = validate_employee_profile_update(payload, allowed_fields)
+    if errors:
+        raise EmployeeValidationError(errors)
+
+    for field_name, value in data.items():
+        setattr(employee, field_name, value)
+
+    try:
+        db.session.commit()
+    except SQLAlchemyError as exc:
+        db.session.rollback()
+        raise EmployeeUpdateError("Unable to update the employee profile.") from exc
+    return employee
+
+
+def serialize_employee_profile(employee: Employee, requesting_user: User) -> dict[str, Any]:
+    """Serialize a profile without exposing sensitive employee fields to staff."""
+    role = _role_value(requesting_user)
+    return employee.to_profile_dict(include_sensitive=role in {UserRole.ADMIN.value, UserRole.HR.value})
 
 
 def create_employee_account(payload: dict[str, Any]) -> tuple[Employee, str]:
