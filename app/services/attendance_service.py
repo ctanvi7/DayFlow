@@ -1,18 +1,18 @@
-"""Temporary in-memory attendance business logic."""
+"""Attendance persistence and business rules."""
 
-from datetime import datetime
-from typing import Callable, Optional
+from __future__ import annotations
 
+from datetime import date, datetime
+from typing import Callable
+
+from flask import current_app
+from sqlalchemy.exc import IntegrityError
+
+from app.extensions import db
 from app.models.attendance import Attendance, PRESENT
 
 
-BREAK_MINUTES = 60
-SCHEDULED_WORK_MINUTES = 480
-
-
 class AttendanceError(Exception):
-    """Base error for expected attendance workflow failures."""
-
     status_code = 400
 
 
@@ -29,30 +29,34 @@ class AttendanceValidationError(AttendanceError):
 
 
 class AttendanceService:
-    """Provides attendance operations until the database layer is available."""
+    """Owns database-backed attendance operations."""
 
-    # TODO(Member 2): Replace in-memory repository with SQLAlchemy after Member 4 database foundation is merged.
-    def __init__(self, clock: Optional[Callable[[], datetime]] = None) -> None:
-        self._records: list[Attendance] = []
-        self._next_id = 1
+    def __init__(self, clock: Callable[[], datetime] | None = None) -> None:
         self._clock = clock or datetime.now
 
     def check_in(self, employee_id: int) -> Attendance:
         now = self._clock()
-        if self.get_today_attendance(employee_id, now.date()):
+        if self.get_today_attendance(employee_id, now.date()) is not None:
             raise AttendanceConflictError("Attendance has already been checked in today.")
 
         record = Attendance(
-            id=self._next_id,
             employee_id=employee_id,
             attendance_date=now.date(),
             check_in_at=now,
-            check_out_at=None,
-            break_minutes=BREAK_MINUTES,
+            break_minutes=current_app.config["DEFAULT_BREAK_MINUTES"],
             status=PRESENT,
         )
-        self._records.append(record)
-        self._next_id += 1
+        try:
+            db.session.add(record)
+            db.session.commit()
+        except IntegrityError as exc:
+            db.session.rollback()
+            raise AttendanceConflictError(
+                "Attendance has already been checked in today."
+            ) from exc
+        except Exception:
+            db.session.rollback()
+            raise
         return record
 
     def check_out(self, employee_id: int) -> Attendance:
@@ -66,41 +70,52 @@ class AttendanceService:
             raise AttendanceValidationError("Check-out time cannot be earlier than check-in time.")
 
         record.check_out_at = now
-        record.work_minutes = self.calculate_work_minutes(
-            record.check_in_at, record.check_out_at, record.break_minutes
-        )
+        record.work_minutes = self.calculate_work_minutes(record.check_in_at, now, record.break_minutes)
         record.extra_minutes = self.calculate_extra_minutes(record.work_minutes)
         record.status = PRESENT
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         return record
 
     def get_employee_attendance(self, employee_id: int, year: int, month: int) -> list[Attendance]:
-        return [
-            record
-            for record in self._records
-            if record.employee_id == employee_id
-            and record.attendance_date.year == year
-            and record.attendance_date.month == month
-        ]
-
-    def get_today_attendance(self, employee_id: int, attendance_date=None) -> Optional[Attendance]:
-        target_date = attendance_date or self._clock().date()
-        return next(
-            (
-                record
-                for record in self._records
-                if record.employee_id == employee_id and record.attendance_date == target_date
-            ),
-            None,
+        if month < 1 or month > 12:
+            raise AttendanceValidationError("month must be between 1 and 12.")
+        start_date = date(year, month, 1)
+        end_date = date(year + (month == 12), 1 if month == 12 else month + 1, 1)
+        return (
+            Attendance.query.filter(
+                Attendance.employee_id == employee_id,
+                Attendance.attendance_date >= start_date,
+                Attendance.attendance_date < end_date,
+            )
+            .order_by(Attendance.attendance_date.desc())
+            .all()
         )
 
-    def get_all_attendance(self) -> list[Attendance]:
-        return list(self._records)
+    def get_today_attendance(self, employee_id: int, attendance_date: date | None = None) -> Attendance | None:
+        target_date = attendance_date or self._clock().date()
+        return Attendance.query.filter_by(employee_id=employee_id, attendance_date=target_date).first()
+
+    def get_all_attendance(self, filters: dict | None = None) -> list[Attendance]:
+        filters = filters or {}
+        query = Attendance.query
+        if filters.get("employee_id"):
+            try:
+                query = query.filter_by(employee_id=int(filters["employee_id"]))
+            except (TypeError, ValueError) as exc:
+                raise AttendanceValidationError("employee_id must be an integer.") from exc
+        if filters.get("status"):
+            query = query.filter_by(status=str(filters["status"]).upper())
+        return query.order_by(Attendance.attendance_date.desc()).all()
 
     @staticmethod
     def calculate_work_minutes(check_in_at: datetime, check_out_at: datetime, break_minutes: int) -> int:
         elapsed_minutes = int((check_out_at - check_in_at).total_seconds() // 60)
-        return max(0, elapsed_minutes - break_minutes)
+        return max(0, elapsed_minutes - max(0, break_minutes))
 
     @staticmethod
     def calculate_extra_minutes(work_minutes: int) -> int:
-        return max(0, work_minutes - SCHEDULED_WORK_MINUTES)
+        return max(0, work_minutes - current_app.config["SCHEDULED_WORK_MINUTES"])
