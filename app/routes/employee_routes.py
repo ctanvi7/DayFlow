@@ -1,7 +1,9 @@
 """Employee management and caller-safe profile routes."""
 
 from flask import Blueprint, g, request
+from sqlalchemy import or_
 
+from app.models import Employee
 from app.services.employee_service import (
     EmployeeAccessError,
     EmployeeNotFoundError,
@@ -45,6 +47,43 @@ def create_employee():
         },
         "Employee created successfully",
         status_code=201,
+    )
+
+
+@employee_bp.get("")
+@require_roles("ADMIN", "HR")
+def list_employees():
+    """Return the Admin/HR employee directory, optionally filtered by search."""
+    query = Employee.query
+    search = request.args.get("search", "").strip()
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                Employee.first_name.ilike(pattern),
+                Employee.last_name.ilike(pattern),
+                Employee.department.ilike(pattern),
+                Employee.job_title.ilike(pattern),
+                Employee.manager_name.ilike(pattern),
+                Employee.company.ilike(pattern),
+                Employee.location.ilike(pattern),
+            )
+        )
+
+    employees = query.order_by(Employee.first_name, Employee.last_name).all()
+    return success_response(
+        [
+            {
+                "id": employee.id,
+                "first_name": employee.first_name,
+                "last_name": employee.last_name,
+                "job_title": employee.job_title,
+                "department": employee.department,
+                "profile_image_path": employee.profile_image_path,
+            }
+            for employee in employees
+        ],
+        "Employee directory loaded.",
     )
 
 

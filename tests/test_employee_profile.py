@@ -73,6 +73,34 @@ def test_logged_out_user_cannot_read_profile(app):
     assert client.get(f"/api/employees/{app.profile_ids['employee']}").status_code == 401
 
 
+def test_employee_directory_is_limited_to_admin_and_hr(app):
+    client = app.test_client()
+    assert client.get("/api/employees").status_code == 401
+
+    login(client, "OIEMPA")
+    assert client.get("/api/employees").status_code == 403
+
+
+@pytest.mark.parametrize("login_id", ["OIADMIN", "OIHR"])
+def test_admin_and_hr_can_search_the_safe_employee_directory(app, login_id):
+    client = app.test_client()
+    login(client, login_id)
+
+    response = client.get("/api/employees?search=Employee")
+
+    assert response.status_code == 200
+    assert response.get_json()["data"] == [
+        {
+            "id": app.profile_ids["employee"],
+            "first_name": "Employee",
+            "last_name": "Member",
+            "job_title": "Developer",
+            "department": "Engineering",
+            "profile_image_path": None,
+        }
+    ]
+
+
 @pytest.mark.parametrize("login_id", ["OIADMIN", "OIHR"])
 def test_admin_and_hr_can_read_any_profile(app, login_id):
     client = app.test_client()
