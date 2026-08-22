@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Leave | DayFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+</head>
+<body>
+  <main class="page-shell" data-leave-screen="employee">
+    <header class="page-header"><h1>My Leave</h1><p>Request time off and track your requests.</p></header>
+    <p class="leave-feedback" role="status" aria-live="polite" data-leave-feedback></p>
+    <section class="card">
+      <h2>New leave request</h2>
+      <form class="form-grid" data-leave-request-form>
+        <label>Leave type<select name="leave_type" required><option value="PAID">Paid leave</option><option value="SICK">Sick leave</option><option value="UNPAID">Unpaid leave</option></select></label>
+        <label>Start date<input name="start_date" type="date" required></label>
+        <label>End date<input name="end_date" type="date" required></label>
+        <label class="form-grid__full">Remarks<textarea name="remarks" maxlength="500" required></textarea></label>
+        <div class="form-grid__full"><button type="submit">Submit request</button></div>
+      </form>
+    </section>
+    <section class="leave-section"><h2>Your requests</h2><div class="leave-list" data-leave-list></div></section>
+  </main>
+  <script src="{{ url_for('static', filename='js/leave.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ employee.first_name }} {{ employee.last_name }} | DayFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+</head>
+<body>
+  <main class="page-shell"><a href="{{ url_for('pages.admin_employees') }}">Back to directory</a><section class="card employee-details"><h1>{{ employee.first_name }} {{ employee.last_name }}</h1><dl><dt>Job title</dt><dd>{{ employee.job_title }}</dd><dt>Department</dt><dd>{{ employee.department }}</dd><dt>Email</dt><dd>{{ employee.user.email }}</dd><dt>Date joined</dt><dd>{{ employee.date_of_joining }}</dd></dl></section></main>
+</body>
+</html>
