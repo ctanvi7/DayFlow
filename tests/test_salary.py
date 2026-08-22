@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
@@ -6,7 +6,7 @@ import pytest
 from app import create_app
 from app.config import Config
 from app.extensions import db
-from app.models import Employee, User
+from app.models import Attendance, Employee, User
 from app.services.salary_service import calculate_salary
 
 
@@ -73,3 +73,25 @@ def test_admin_can_save_salary_and_health_is_unchanged(app):
         assert result.status_code == 200
         assert result.get_json()["data"]["monthly_wage"] == "50000.00"
         assert client.get("/api/health").get_json() == {"status": "ok"}
+
+
+def test_attendance_row_persists_for_an_employee_and_date(app):
+    with app.app_context():
+        employee = Employee.query.first()
+        attendance = Attendance(
+            employee_id=employee.id,
+            attendance_date=date.today(),
+            check_in_at=datetime(2026, 8, 22, 9, 0),
+            check_out_at=datetime(2026, 8, 22, 17, 30),
+            status="PRESENT",
+        )
+        db.session.add(attendance)
+        db.session.commit()
+
+        saved = Attendance.query.filter_by(
+            employee_id=employee.id, attendance_date=date.today()
+        ).one()
+        assert saved.check_in_at.hour == 9
+        assert saved.check_out_at.hour == 17
+        assert saved.status == "PRESENT"
+        assert saved.employee.id == employee.id
