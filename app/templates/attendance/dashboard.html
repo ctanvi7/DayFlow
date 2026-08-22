@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance | Dayflow HRMS</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/attendance.css') }}">
+</head>
+<body>
+  <!-- TODO(Member 2): Integrate this page with the shared Dayflow base template/navigation after Member 1 establishes the common dashboard layout. -->
+  <main class="attendance-page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Dayflow HRMS</p>
+        <h1>Attendance</h1>
+        <p id="today-date" class="page-subtitle"></p>
+      </div>
+    </header>
+
+    <section class="today-card" aria-labelledby="today-heading">
+      <div class="today-card__header">
+        <div>
+          <p class="eyebrow">Today</p>
+          <h2 id="today-heading">Your attendance</h2>
+        </div>
+        <span id="today-status" class="status-badge" role="status" aria-live="polite">Not checked in</span>
+      </div>
+
+      <dl class="attendance-details">
+        <div><dt>Check-in time</dt><dd id="check-in-time">—</dd></div>
+        <div><dt>Check-out time</dt><dd id="check-out-time">—</dd></div>
+        <div><dt>Total work hours</dt><dd id="work-hours">—</dd></div>
+        <div><dt>Extra hours</dt><dd id="extra-hours">—</dd></div>
+      </dl>
+
+      <div class="attendance-actions" aria-label="Attendance actions">
+        <button id="check-in-button" type="button">Check In</button>
+        <button id="check-out-button" class="secondary-button" type="button" disabled>Check Out</button>
+      </div>
+      <p id="attendance-feedback" class="feedback" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="summary-section" aria-labelledby="summary-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">This month</p>
+          <h2 id="summary-heading">Attendance summary</h2>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <article class="summary-card"><p>Total working days</p><strong id="total-working-days">0</strong></article>
+        <article class="summary-card"><p>Present days</p><strong id="present-days">0</strong></article>
+        <article class="summary-card"><p>Absent days</p><strong id="absent-days">0</strong></article>
+        <article class="summary-card"><p>Leave days</p><strong id="leave-days">0</strong></article>
+        <article class="summary-card"><p>Total work hours</p><strong id="total-work-hours">0 hours 0 minutes</strong></article>
+        <article class="summary-card"><p>Total extra hours</p><strong id="total-extra-hours">0 hours 0 minutes</strong></article>
+      </div>
+    </section>
+
+    <section class="history-section" aria-labelledby="history-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">History</p>
+          <h2 id="history-heading">Monthly attendance</h2>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Check In</th>
+              <th scope="col">Check Out</th>
+              <th scope="col">Work Hours</th>
+              <th scope="col">Extra Hours</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-history"></tbody>
+        </table>
+      </div>
+      <p id="empty-state" class="empty-state" hidden>No attendance records found for this month.</p>
+    </section>
+  </main>
+
+  <script defer src="{{ url_for('static', filename='js/attendance.js') }}"></script>
+</body>
+</html>
