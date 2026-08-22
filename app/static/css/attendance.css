@@ -21,6 +21,9 @@ h1, h2, p { margin-top: 0; }
 h1 { font-size: clamp(2rem, 4vw, 2.75rem); margin-bottom: 8px; }
 h2 { font-size: 1.25rem; margin-bottom: 0; }
 .page-subtitle { color: var(--color-muted); margin-bottom: 0; }
+.page-nav { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-left: auto; }
+.page-nav a { color: var(--color-primary-dark); }
+.page-nav a[aria-current="page"] { font-weight: 700; text-decoration-thickness: 2px; }
 
 .today-card, .summary-card, .history-section {
   background: var(--color-surface);

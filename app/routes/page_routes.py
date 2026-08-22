@@ -55,6 +55,18 @@ def admin_employees():
     return render_template("admin_employees.html")
 
 
+@pages_bp.get("/admin/employees/new")
+@page_require_roles("ADMIN", "HR")
+def new_employee():
+    return render_template("new_employee.html")
+
+
+@pages_bp.get("/admin/salary")
+@page_require_roles("ADMIN", "HR")
+def admin_salary():
+    return render_template("admin_salary.html")
+
+
 @pages_bp.get("/employees/<int:employee_id>")
 @page_require_roles("ADMIN", "HR")
 def employee_details(employee_id: int):

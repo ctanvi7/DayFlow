@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="page-shell" data-leave-screen="employee">
-    <header class="page-header"><h1>My Leave</h1><p>Request time off and track your requests.</p></header>
+    <header class="page-header"><h1>My Leave</h1><p>Request time off and track your requests.</p><nav class="page-nav" aria-label="Employee navigation"><a href="{{ url_for('pages.employee_attendance') }}">Attendance</a><a href="{{ url_for('pages.employee_leaves') }}" aria-current="page">My leave</a></nav></header>
     <p class="leave-feedback" role="status" aria-live="polite" data-leave-feedback></p>
     <section class="card">
       <h2>New leave request</h2>

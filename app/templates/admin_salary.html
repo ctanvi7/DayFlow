@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Salary Information | DayFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+</head>
+<body>
+  <main class="page-shell" data-salary-screen>
+    <header class="page-header">
+      <h1>Salary Information</h1>
+      <nav class="page-nav" aria-label="Admin navigation">
+        <a href="{{ url_for('pages.admin_employees') }}">Employees</a>
+        <a href="{{ url_for('pages.new_employee') }}">New employee</a>
+        <a href="{{ url_for('pages.admin_leaves') }}">Leave requests</a>
+        <a href="{{ url_for('pages.admin_salary') }}" aria-current="page">Salary</a>
+      </nav>
+    </header>
+    <section class="card">
+      <label for="salary-employee">Employee<select id="salary-employee" data-salary-employee required></select></label>
+      <form class="form-grid" data-salary-form hidden>
+        <label>Monthly wage<input name="monthly_wage" type="number" min="1" step="0.01" required></label>
+        <div class="form-grid__full salary-breakdown" data-salary-breakdown></div>
+        <div class="form-grid__full"><button type="submit">Save salary</button></div>
+      </form>
+      <p class="form-feedback" data-salary-feedback role="status" aria-live="polite"></p>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/admin_salary.js') }}" defer></script>
+</body>
+</html>

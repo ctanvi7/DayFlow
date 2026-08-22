@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="page-shell" data-leave-screen="admin">
-    <header class="page-header"><h1>Leave Requests</h1><p>Review employee leave requests.</p><a href="{{ url_for('pages.admin_employees') }}">Employee directory</a></header>
+    <header class="page-header"><h1>Leave Requests</h1><p>Review employee leave requests.</p><nav class="page-nav" aria-label="Admin navigation"><a href="{{ url_for('pages.admin_employees') }}">Employees</a><a href="{{ url_for('pages.new_employee') }}">New employee</a><a href="{{ url_for('pages.admin_leaves') }}" aria-current="page">Leave requests</a><a href="{{ url_for('pages.admin_salary') }}">Salary</a></nav></header>
     <p class="leave-feedback" role="status" aria-live="polite" data-leave-feedback></p>
     <form class="card filter-grid" data-leave-filters>
       <label>Status<select name="status"><option value="">All statuses</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option></select></label>
