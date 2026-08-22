@@ -1,9 +1,11 @@
 """Admin and HR employee-management and directory routes."""
 
+from datetime import date
+
 from flask import Blueprint, request
 from sqlalchemy import or_
 
-from app.models import Employee
+from app.models import Employee, LeaveRequest
 from app.services.employee_service import (
     DuplicateEmployeeError,
     EmployeeValidationError,
@@ -33,6 +35,19 @@ def list_employees():
             )
         )
     employees = query.order_by(Employee.first_name, Employee.last_name).all()
+    today = date.today()
+    approved_leave_ids = {
+        employee_id
+        for (employee_id,) in (
+            LeaveRequest.query.with_entities(LeaveRequest.employee_id)
+            .filter(
+                LeaveRequest.status == "APPROVED",
+                LeaveRequest.start_date <= today,
+                LeaveRequest.end_date >= today,
+            )
+            .all()
+        )
+    }
     return response(
         True,
         data=[
@@ -43,7 +58,11 @@ def list_employees():
                 "department": employee.department,
                 "job_title": employee.job_title,
                 "profile_image_path": employee.profile_image_path,
-                "current_status": "NOT_CHECKED_IN",
+                "current_status": (
+                    "LEAVE"
+                    if employee.id in approved_leave_ids
+                    else "NOT_CHECKED_IN"
+                ),
             }
             for employee in employees
         ],

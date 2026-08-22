@@ -218,3 +218,30 @@ def test_employee_can_only_view_own_leave_requests(client, users):
     records = response.get_json()["data"]
     assert len(records) == 1
     assert records[0]["employee_id"] == users["other_employee_id"]
+
+
+def test_admin_filters_requests_and_employee_sees_reviewed_status(client, users):
+    set_session(client, users["employee"])
+    request_id = submit_leave(
+        client, leave_type="PAID", start_date="2026-09-01", end_date="2026-09-03"
+    ).get_json()["data"]["id"]
+    set_session(client, users["other_employee"])
+    assert submit_leave(
+        client, leave_type="SICK", start_date="2026-10-01", end_date="2026-10-02"
+    ).status_code == 201
+
+    set_session(client, users["admin"])
+    filtered = client.get(
+        "/api/leaves?status=PENDING&leave_type=PAID&search=Esha&start_date=2026-09-01&end_date=2026-09-03"
+    )
+    assert filtered.status_code == 200
+    assert [record["id"] for record in filtered.get_json()["data"]] == [request_id]
+    assert client.patch(
+        f"/api/leaves/{request_id}/decision",
+        json={"status": "APPROVED", "review_comment": "Enjoy your leave."},
+    ).status_code == 200
+
+    set_session(client, users["employee"])
+    own_requests = client.get("/api/leaves/me").get_json()["data"]
+    assert own_requests[0]["status"] == "APPROVED"
+    assert own_requests[0]["review_comment"] == "Enjoy your leave."

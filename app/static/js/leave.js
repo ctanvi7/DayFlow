@@ -34,6 +34,13 @@
     feedback.className = `leave-feedback ${kind}`;
   }
 
+  function userMessage(error) {
+    const details = error.details || {};
+    const fieldMessages = Object.values(details).filter(Boolean);
+    if (fieldMessages.length) return fieldMessages.join(" ");
+    return error.message || "Something went wrong. Please try again.";
+  }
+
   function renderStatus(status) {
     return element("span", status, `leave-status leave-status--${String(status).toLowerCase()}`);
   }
@@ -80,7 +87,7 @@
           setFeedback(root, `Leave request ${status.toLowerCase()}.`, "success");
           await loadAdmin(root);
         } catch (error) {
-          setFeedback(root, error.message, "error");
+          setFeedback(root, userMessage(error), "error");
         } finally {
           button.disabled = false;
         }
@@ -97,7 +104,7 @@
       renderRows(root, await api(endpoints.mine), false);
       setFeedback(root, "");
     } catch (error) {
-      setFeedback(root, error.status === 401 || error.status === 403 ? "Your session has expired." : error.message, "error");
+      setFeedback(root, error.status === 401 || error.status === 403 ? "Your session has expired." : userMessage(error), "error");
     }
   }
 
@@ -111,7 +118,7 @@
       renderRows(root, await api(`${endpoints.all}?${params}`), true);
       setFeedback(root, "");
     } catch (error) {
-      setFeedback(root, error.status === 401 || error.status === 403 ? "You are not authorized to view leave requests." : error.message, "error");
+      setFeedback(root, error.status === 401 || error.status === 403 ? "You are not authorized to view leave requests." : userMessage(error), "error");
     }
   }
 
@@ -126,7 +133,7 @@
         setFeedback(root, "Leave request submitted.", "success");
         await loadEmployee(root);
       } catch (error) {
-        setFeedback(root, error.message, "error");
+        setFeedback(root, userMessage(error), "error");
       }
     });
     loadEmployee(root);
