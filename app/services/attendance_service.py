@@ -128,7 +128,7 @@ class AttendanceService:
             return PRESENT
         if now.weekday() not in current_app.config["WORKING_DAYS"]:
             return "NOT_CHECKED_IN"
-        if now.hour < current_app.config["ATTENDANCE_DECISION_HOUR"]:
+        if now.hour <= current_app.config["ATTENDANCE_DECISION_HOUR"]:
             return "NOT_CHECKED_IN"
         return "ABSENT"
 
