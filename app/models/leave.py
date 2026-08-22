@@ -7,7 +7,7 @@ foundation.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.extensions import db
 
@@ -20,9 +20,9 @@ class LeaveRequest(db.Model):
     LEAVE_TYPES = ("PAID", "SICK", "UNPAID")
     STATUSES = ("PENDING", "APPROVED", "REJECTED")
 
-    id = db.Column(db.BigInteger, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     employee_id = db.Column(
-        db.BigInteger,
+        db.Integer,
         db.ForeignKey("employees.id"),
         nullable=False,
         index=True,
@@ -38,19 +38,19 @@ class LeaveRequest(db.Model):
     )
     review_comment = db.Column(db.String(500), nullable=True)
     reviewed_by_user_id = db.Column(
-        db.BigInteger,
+        db.Integer,
         db.ForeignKey("users.id"),
         nullable=True,
     )
     reviewed_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(
-        db.DateTime, nullable=False, default=datetime.utcnow
+        db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc)
     )
     updated_at = db.Column(
         db.DateTime,
         nullable=False,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
     # These target classes are supplied by Member 1's shared models.
