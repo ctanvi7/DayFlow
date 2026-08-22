@@ -1,10 +1,11 @@
 from datetime import date, datetime
+from decimal import Decimal
 
 import pytest
 
 from app import create_app
 from app.extensions import db
-from app.models import Attendance, Employee, User, UserRole
+from app.models import Attendance, Employee, LeaveRequest, User, UserRole
 from app.services.attendance_service import (
     AttendanceConflictError,
     AttendanceService,
@@ -161,3 +162,72 @@ def test_unauthenticated_attendance_requests_are_rejected(app):
     client = app.test_client()
     assert client.get("/api/attendance/me").status_code == 401
     assert client.post("/api/attendance/check-in").status_code == 401
+
+
+def test_current_status_prioritizes_approved_leave_then_attendance(app):
+    with app.app_context():
+        employee = create_employee("employee@example.local", "EMPLOYEE")
+        db.session.add(LeaveRequest(
+            employee_id=employee.id,
+            leave_type="PAID",
+            start_date=date(2026, 8, 24),
+            end_date=date(2026, 8, 24),
+            days_requested=Decimal("1"),
+            remarks="Approved time off",
+            status="APPROVED",
+        ))
+        db.session.add(Attendance(
+            employee_id=employee.id,
+            attendance_date=date(2026, 8, 24),
+            check_in_at=datetime(2026, 8, 24, 9),
+            break_minutes=60,
+        ))
+        db.session.commit()
+        service = AttendanceService(clock=Clock(datetime(2026, 8, 24, 11)))
+        assert service.get_current_status(employee.id) == "LEAVE"
+
+
+def test_current_status_changes_from_not_checked_in_to_absent(app):
+    with app.app_context():
+        employee = create_employee("employee@example.local", "EMPLOYEE")
+        assert AttendanceService(clock=Clock(datetime(2026, 8, 24, 9))).get_current_status(employee.id) == "NOT_CHECKED_IN"
+        assert AttendanceService(clock=Clock(datetime(2026, 8, 24, 10))).get_current_status(employee.id) == "ABSENT"
+
+
+def test_dashboard_summary_is_role_aware(app):
+    with app.app_context():
+        employee = create_employee("employee@example.local", "EMPLOYEE")
+        create_admin()
+        db.session.add(Attendance(employee_id=employee.id, attendance_date=date.today(), break_minutes=60))
+        db.session.commit()
+
+    employee_client = app.test_client()
+    login(employee_client, "EMPLOYEE")
+    employee_response = employee_client.get("/api/dashboard/summary")
+    assert employee_response.status_code == 200
+    assert "current_status" in employee_response.get_json()["data"]["attendance"]
+
+    admin_client = app.test_client()
+    login(admin_client, "ADMIN")
+    admin_response = admin_client.get("/api/dashboard/summary")
+    assert admin_response.status_code == 200
+    assert "total" in admin_response.get_json()["data"]["attendance"]
+
+
+def test_employee_attendance_page_requires_employee_role(app):
+    with app.app_context():
+        create_employee("employee@example.local", "EMPLOYEE")
+        create_admin()
+
+    anonymous_client = app.test_client()
+    assert anonymous_client.get("/attendance").status_code == 401
+
+    employee_client = app.test_client()
+    login(employee_client, "EMPLOYEE")
+    response = employee_client.get("/attendance")
+    assert response.status_code == 200
+    assert b"Attendance" in response.data
+
+    admin_client = app.test_client()
+    login(admin_client, "ADMIN")
+    assert admin_client.get("/attendance").status_code == 403

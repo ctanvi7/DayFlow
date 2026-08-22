@@ -10,7 +10,7 @@ from app.services.attendance_service import (
     AttendanceService,
     AttendanceValidationError,
 )
-from app.utils.auth import require_roles
+from app.utils.auth import login_required, require_roles
 from app.utils.responses import error_response, success_response
 
 
@@ -44,11 +44,10 @@ def my_attendance():
         year, month = _month_filters()
         records = attendance_service.get_employee_attendance(employee_id, year, month)
         today = attendance_service.get_today_attendance(employee_id)
+        current_status = attendance_service.get_current_status(employee_id)
     except AttendanceError as error:
         return error_response(str(error), status_code=error.status_code)
 
-    # Stage 2 will add approved-leave and workday decision rules.
-    current_status = today.status if today else "NOT_CHECKED_IN"
     return success_response(
         {"attendance": [record.to_dict() for record in records], "current_status": current_status},
         "Attendance retrieved successfully.",
@@ -83,3 +82,28 @@ def all_attendance():
     except AttendanceValidationError as error:
         return error_response(str(error), status_code=error.status_code)
     return success_response([record.to_dict() for record in records], "Attendance retrieved successfully.")
+
+
+@attendance_bp.get("/api/dashboard/summary")
+@login_required
+def dashboard_summary():
+    if g.current_user.role in {"ADMIN", "HR"}:
+        return success_response(
+            {"attendance": attendance_service.get_today_summary()},
+            "Dashboard summary retrieved successfully.",
+        )
+    try:
+        employee_id = _current_employee_id()
+        today = attendance_service.get_today_attendance(employee_id)
+        status = attendance_service.get_current_status(employee_id)
+    except AttendanceError as error:
+        return error_response(str(error), status_code=error.status_code)
+    return success_response(
+        {
+            "attendance": {
+                "current_status": status,
+                "today": today.to_dict() if today else None,
+            }
+        },
+        "Dashboard summary retrieved successfully.",
+    )

@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models.attendance import Attendance, PRESENT
+from app.models.leave import LeaveRequest
 
 
 class AttendanceError(Exception):
@@ -110,6 +111,37 @@ class AttendanceService:
         if filters.get("status"):
             query = query.filter_by(status=str(filters["status"]).upper())
         return query.order_by(Attendance.attendance_date.desc()).all()
+
+    def get_current_status(self, employee_id: int) -> str:
+        """Return the single backend-owned attendance status for today."""
+        now = self._clock()
+        today = now.date()
+        approved_leave = LeaveRequest.query.filter(
+            LeaveRequest.employee_id == employee_id,
+            LeaveRequest.status == "APPROVED",
+            LeaveRequest.start_date <= today,
+            LeaveRequest.end_date >= today,
+        ).first()
+        if approved_leave is not None:
+            return "LEAVE"
+        if self.get_today_attendance(employee_id, today) is not None:
+            return PRESENT
+        if now.weekday() not in current_app.config["WORKING_DAYS"]:
+            return "NOT_CHECKED_IN"
+        if now.hour < current_app.config["ATTENDANCE_DECISION_HOUR"]:
+            return "NOT_CHECKED_IN"
+        return "ABSENT"
+
+    def get_today_summary(self) -> dict[str, int]:
+        """Return aggregate, non-sensitive attendance counts for Admin/HR."""
+        today = self._clock().date()
+        records = Attendance.query.filter_by(attendance_date=today).all()
+        return {
+            "total": len(records),
+            "present": sum(record.status == PRESENT for record in records),
+            "absent": sum(record.status == "ABSENT" for record in records),
+            "leave": sum(record.status == "LEAVE" for record in records),
+        }
 
     @staticmethod
     def calculate_work_minutes(check_in_at: datetime, check_out_at: datetime, break_minutes: int) -> int:
