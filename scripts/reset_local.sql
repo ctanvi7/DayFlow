@@ -1,0 +1,7 @@
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE attendance;
+TRUNCATE TABLE leave_requests;
+TRUNCATE TABLE salary_structures;
+TRUNCATE TABLE employees;
+TRUNCATE TABLE users;
+SET FOREIGN_KEY_CHECKS = 1;

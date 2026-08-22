@@ -1,5 +1,7 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 
+from sqlalchemy.exc import SQLAlchemyError
+
 from app.extensions import db
 from app.models import Employee, SalaryStructure
 
@@ -9,7 +11,7 @@ PROFESSIONAL_TAX = Decimal("200.00")
 
 
 def money(value):
-    return Decimal(value).quantize(MONEY, rounding=ROUND_HALF_UP)
+    return Decimal(str(value)).quantize(MONEY, rounding=ROUND_HALF_UP)
 
 
 def calculate_salary(monthly_wage):
@@ -43,14 +45,21 @@ def calculate_salary(monthly_wage):
 
 
 def save_salary(employee_id, updated_by_user_id, monthly_wage):
-    employee = db.session.get(Employee, employee_id)
-    if employee is None:
-        raise LookupError("Employee not found")
-    values = calculate_salary(monthly_wage)
-    salary = employee.salary or SalaryStructure(employee_id=employee_id)
-    for field, value in values.items():
-        setattr(salary, field, value)
-    salary.updated_by_user_id = updated_by_user_id
-    db.session.add(salary)
-    db.session.commit()
-    return salary
+    try:
+        employee = db.session.get(Employee, employee_id)
+        if employee is None:
+            raise LookupError("Employee not found")
+        values = calculate_salary(monthly_wage)
+        salary = employee.salary or SalaryStructure(employee_id=employee_id)
+        for field, value in values.items():
+            setattr(salary, field, value)
+        salary.updated_by_user_id = updated_by_user_id
+        db.session.add(salary)
+        db.session.commit()
+        return salary
+    except (LookupError, ValueError, TypeError):
+        db.session.rollback()
+        raise
+    except SQLAlchemyError:
+        db.session.rollback()
+        raise

@@ -7,6 +7,7 @@ from app import create_app
 from app.config import Config
 from app.extensions import db
 from app.models import Attendance, Employee, User
+from app.services.data_service import DataService, DataTransactionError
 from app.services.salary_service import calculate_salary
 
 
@@ -95,3 +96,12 @@ def test_attendance_row_persists_for_an_employee_and_date(app):
         assert saved.check_out_at.hour == 17
         assert saved.status == "PRESENT"
         assert saved.employee.id == employee.id
+
+def test_duplicate_persistent_check_in_rolls_back_cleanly(app):
+    with app.app_context():
+        employee = Employee.query.first()
+        DataService.check_in(employee.id, date(2026, 8, 22), datetime(2026, 8, 22, 9, 0))
+        with pytest.raises(DataTransactionError) as error:
+            DataService.check_in(employee.id, date(2026, 8, 22), datetime(2026, 8, 22, 9, 5))
+        assert error.value.errors["attendance"] == "Employee has already checked in for this date"
+        assert Attendance.query.count() == 1
