@@ -1,5 +1,6 @@
 """Authentication and authorization user model."""
 
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy.orm import validates
@@ -7,7 +8,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 
-PRIMARY_KEY_TYPE = db.BigInteger().with_variant(db.Integer, "sqlite")
+PRIMARY_KEY_TYPE = db.Integer
 
 
 class UserRole(str, Enum):
@@ -20,30 +21,16 @@ class User(db.Model):
     __tablename__ = "users"
 
     id = db.Column(PRIMARY_KEY_TYPE, primary_key=True)
-    login_id = db.Column(db.String(24), unique=True, index=True, nullable=False)
+    # Nullable matches the existing identity-and-salary migration. Application
+    # validation still requires a login ID for every account it creates.
+    login_id = db.Column(db.String(24), unique=True, index=True, nullable=True)
     email = db.Column(db.String(255), unique=True, index=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    role = db.Column(
-        db.Enum(
-            UserRole,
-            name="user_role",
-            native_enum=False,
-            create_constraint=True,
-            validate_strings=True,
-            values_callable=lambda roles: [role.value for role in roles],
-        ),
-        nullable=False,
-        default=UserRole.EMPLOYEE,
-    )
+    role = db.Column(db.String(20), nullable=False, default=UserRole.EMPLOYEE.value)
     must_change_password = db.Column(db.Boolean, nullable=False, default=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
-    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
-    updated_at = db.Column(
-        db.DateTime,
-        nullable=False,
-        server_default=db.func.now(),
-        onupdate=db.func.now(),
-    )
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     employee = db.relationship("Employee", back_populates="user", uselist=False)
 
@@ -64,6 +51,13 @@ class User(db.Model):
         if len(normalized) > 255:
             raise ValueError("Email cannot exceed 255 characters.")
         return normalized
+
+    @validates("role")
+    def normalize_role(self, _key: str, value: UserRole | str) -> str:
+        try:
+            return UserRole(value).value
+        except ValueError as exc:
+            raise ValueError("Role must be ADMIN, HR, or EMPLOYEE.") from exc
 
     def set_password(self, password: str) -> None:
         """Hash a password before persisting it."""

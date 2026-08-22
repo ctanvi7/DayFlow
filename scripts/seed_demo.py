@@ -1,9 +1,10 @@
-"""Create the idempotent demo Admin account used for local development.
+"""Create idempotent local demo data for the shared Dayflow application.
 
 Run from the repository root with ``python -m scripts.seed_demo``.
 """
 
 import sys
+from datetime import date
 from typing import Any
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,15 +15,35 @@ if __package__ in (None, ""):
 
 from app import create_app
 from app.extensions import db
-from app.models import User, UserRole
+from app.models import Employee, User, UserRole
+from app.services.salary_service import save_salary
 
 
 class SeedConfigurationError(RuntimeError):
     """Raised when the local demo credentials have not been configured."""
 
 
+def _ensure_demo_employee(admin: User) -> None:
+    """Create the salary branch's demo employee and salary only when absent."""
+    employee = admin.employee
+    if employee is None:
+        employee = Employee(
+            user_id=admin.id,
+            first_name="Demo",
+            last_name="Admin",
+            department="People",
+            job_title="Administrator",
+            date_of_joining=date.today(),
+        )
+        db.session.add(employee)
+        db.session.flush()
+
+    if employee.salary is None:
+        save_salary(employee.id, admin.id, "50000")
+
+
 def seed_demo(app: Any | None = None) -> str:
-    """Create the configured demo Admin once and return a safe status message."""
+    """Create configured Admin and compatible salary demo data once."""
     app = app or create_app()
     with app.app_context():
         password = app.config["DEMO_ADMIN_PASSWORD"]
@@ -35,13 +56,14 @@ def seed_demo(app: Any | None = None) -> str:
         login_id = app.config["DEMO_ADMIN_LOGIN_ID"].strip().upper()
         if not email or not login_id:
             raise SeedConfigurationError(
-                "Add DEMO_ADMIN_LOGIN_ID and DEMO_ADMIN_EMAIL to .env before seeding the demo Admin."
+                "Set DEMO_ADMIN_LOGIN_ID and DEMO_ADMIN_EMAIL before seeding the demo Admin."
             )
 
         admin_by_email = User.query.filter_by(email=email).first()
         admin_by_login_id = User.query.filter_by(login_id=login_id).first()
+        created = admin_by_email is None and admin_by_login_id is None
 
-        if admin_by_email is None and admin_by_login_id is None:
+        if created:
             admin = User(
                 email=email,
                 login_id=login_id,
@@ -51,19 +73,20 @@ def seed_demo(app: Any | None = None) -> str:
             )
             admin.set_password(password)
             db.session.add(admin)
-            db.session.commit()
-            return "Demo Admin created."
+            db.session.flush()
+        else:
+            if admin_by_email is not None and admin_by_login_id is not None:
+                if admin_by_email.id != admin_by_login_id.id:
+                    raise RuntimeError(
+                        "The configured demo email and login ID belong to different accounts."
+                    )
+            admin = admin_by_email or admin_by_login_id
+            if admin.role != UserRole.ADMIN.value:
+                raise RuntimeError("The configured demo account belongs to a non-Admin account.")
 
-        if admin_by_email is not None and admin_by_login_id is not None:
-            if admin_by_email.id != admin_by_login_id.id:
-                raise RuntimeError(
-                    "The configured demo email and login ID belong to different accounts."
-                )
-
-        admin = admin_by_email or admin_by_login_id
-        if admin.role != UserRole.ADMIN:
-            raise RuntimeError("The configured demo account belongs to a non-Admin account.")
-        return "Demo Admin already exists."
+        _ensure_demo_employee(admin)
+        db.session.commit()
+        return "Demo Admin created." if created else "Demo Admin already exists."
 
 
 def main() -> int:

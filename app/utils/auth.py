@@ -18,6 +18,9 @@ def get_current_user() -> User | None:
     """Load the active user represented by the current server-side session."""
     user_id = session.get("user_id")
     if user_id is None:
+        legacy_user = session.get("user")
+        user_id = legacy_user.get("id") if isinstance(legacy_user, dict) else None
+    if user_id is None:
         return None
 
     user = db.session.get(User, user_id)
@@ -33,7 +36,7 @@ def establish_session(user: User) -> None:
     session.clear()
     session["user_id"] = user.id
     session["role"] = role
-    # Retained for compatibility with sibling blueprints that read session.user.
+    # Retained for sibling blueprints that read session.user directly.
     session["user"] = {"id": user.id, "role": role}
 
 
@@ -93,5 +96,5 @@ def require_roles(*allowed_roles: UserRole | str) -> Callable:
     return decorator
 
 
-# Keep the original decorator name usable by existing and future modules.
+# Compatibility aliases used by sibling modules.
 roles_required = require_roles

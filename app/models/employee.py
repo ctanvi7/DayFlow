@@ -1,6 +1,6 @@
 """Employee profile model linked one-to-one with a user account."""
 
-from importlib.util import find_spec
+from datetime import datetime
 
 from app.extensions import db
 from app.models.user import PRIMARY_KEY_TYPE
@@ -36,20 +36,11 @@ class Employee(db.Model):
     ifsc_code = db.Column(db.String(32), nullable=True)
     profile_image_path = db.Column(db.String(500), nullable=True)
 
-    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
-    updated_at = db.Column(
-        db.DateTime,
-        nullable=False,
-        server_default=db.func.now(),
-        onupdate=db.func.now(),
-    )
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship("User", back_populates="employee")
-
-    # The salary model belongs to a parallel feature. Defining this only when
-    # that module exists preserves both the identity-only and merged branches.
-    if find_spec("app.models.salary") is not None:
-        salary = db.relationship("SalaryStructure", back_populates="employee", uselist=False)
+    salary = db.relationship("SalaryStructure", back_populates="employee", uselist=False, cascade="all, delete-orphan")
 
     def to_dict(self) -> dict:
         """Return the standard employee profile without private banking identifiers."""

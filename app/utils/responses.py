@@ -44,7 +44,7 @@ def response(
     errors: dict[str, Any] | None = None,
     status: int = 200,
 ):
-    """Compatibility wrapper for existing blueprints using ``response``."""
+    """Compatibility wrapper for blueprints using the older ``response`` API."""
     if success:
         return success_response(data=data, message=message, status_code=status)
     return error_response(message=message, errors=errors, status_code=status)
