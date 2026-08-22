@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New Employee | DayFlow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+</head>
+<body>
+  <main class="page-shell">
+    <header class="page-header">
+      <h1>New Employee</h1>
+      <nav class="page-nav" aria-label="Admin navigation">
+        <a href="{{ url_for('pages.admin_employees') }}">Employees</a>
+        <a href="{{ url_for('pages.admin_leaves') }}">Leave requests</a>
+        <a href="{{ url_for('pages.admin_salary') }}">Salary</a>
+      </nav>
+    </header>
+    <section class="card">
+      <form class="form-grid" data-new-employee-form>
+        <label>First name<input name="first_name" required maxlength="80"></label>
+        <label>Last name<input name="last_name" required maxlength="80"></label>
+        <label>Email<input name="email" type="email" required maxlength="255"></label>
+        <label>Phone<input name="phone" type="tel" maxlength="20"></label>
+        <label>Department<input name="department" required maxlength="100"></label>
+        <label>Job title<input name="job_title" required maxlength="100"></label>
+        <label>Date of joining<input name="date_of_joining" type="date" required></label>
+        <label>Manager name<input name="manager_name" maxlength="160"></label>
+        <label>Location<input name="location" maxlength="160"></label>
+        <div class="form-grid__full"><button type="submit">Create employee</button></div>
+      </form>
+      <p class="form-feedback" data-employee-feedback role="status" aria-live="polite"></p>
+      <div class="card" data-credentials hidden></div>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/new_employee.js') }}" defer></script>
+</body>
+</html>

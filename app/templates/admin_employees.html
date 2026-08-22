@@ -8,7 +8,7 @@
 </head>
 <body>
   <main class="page-shell">
-    <header class="page-header"><h1>Employee Directory</h1><a href="{{ url_for('pages.admin_leaves') }}">Leave requests</a></header>
+    <header class="page-header"><h1>Employee Directory</h1><nav class="page-nav" aria-label="Admin navigation"><a href="{{ url_for('pages.admin_employees') }}" aria-current="page">Employees</a><a href="{{ url_for('pages.new_employee') }}">New employee</a><a href="{{ url_for('pages.admin_leaves') }}">Leave requests</a><a href="{{ url_for('pages.admin_salary') }}">Salary</a></nav></header>
     <section class="card" data-employee-directory data-employees-endpoint="/api/employees" data-employee-details-path="/employees">
       <label>Search employees<input data-employee-search type="search" placeholder="Name, department, or job title"></label>
       <p class="employee-feedback" role="status" aria-live="polite" data-employee-feedback></p>
