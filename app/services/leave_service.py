@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import or_
@@ -177,7 +177,7 @@ def decide_leave_request(
     request.status = decision
     request.review_comment = comment or None
     request.reviewed_by_user_id = reviewer_user_id
-    request.reviewed_at = datetime.utcnow()
+    request.reviewed_at = datetime.now(timezone.utc)
     try:
         db.session.commit()
     except Exception:
