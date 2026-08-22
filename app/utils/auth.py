@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from functools import wraps
 
-from flask import g, session
+from flask import g, redirect, session, url_for
 
 from app.extensions import db
 from app.models.user import User, UserRole
@@ -94,6 +94,35 @@ def require_roles(*allowed_roles: UserRole | str) -> Callable:
         return wrapped
 
     return decorator
+
+
+def page_require_roles(*allowed_roles: UserRole | str) -> Callable:
+    """Require a role for an HTML page and send anonymous users to login."""
+    allowed = {_role_value(role) for role in allowed_roles}
+
+    def decorator(view: Callable) -> Callable:
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            user = get_current_user()
+            if user is None:
+                return redirect(url_for("pages.login", next=request_path()))
+            if user.must_change_password:
+                return redirect(url_for("pages.login"))
+            if _role_value(user.role) not in allowed:
+                return error_response("You do not have permission to view this page.", status_code=403)
+            g.current_user = user
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+def request_path() -> str:
+    """Return the current path without importing request at module load time."""
+    from flask import request
+
+    return request.full_path
 
 
 # Compatibility aliases used by sibling modules.

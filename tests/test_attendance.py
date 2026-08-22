@@ -220,7 +220,9 @@ def test_employee_attendance_page_requires_employee_role(app):
         create_admin()
 
     anonymous_client = app.test_client()
-    assert anonymous_client.get("/attendance").status_code == 401
+    response = anonymous_client.get("/attendance")
+    assert response.status_code == 302
+    assert response.headers["Location"].startswith("/login")
 
     employee_client = app.test_client()
     login(employee_client, "EMPLOYEE")
