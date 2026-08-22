@@ -94,11 +94,12 @@ def test_admin_and_hr_can_search_the_safe_employee_directory(app, login_id):
             "id": app.profile_ids["employee"],
             "first_name": "Employee",
             "last_name": "Member",
-            "job_title": "Developer",
-            "department": "Engineering",
-            "profile_image_path": None,
-        }
-    ]
+                "job_title": "Developer",
+                "department": "Engineering",
+                "profile_image_path": None,
+                "current_status": "NOT_CHECKED_IN",
+            }
+        ]
 
 
 @pytest.mark.parametrize("login_id", ["OIADMIN", "OIHR"])

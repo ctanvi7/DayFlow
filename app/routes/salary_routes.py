@@ -1,7 +1,7 @@
 from flask import Blueprint, request, session
 
 from app.models import Employee
-from app.services.salary_service import save_salary
+from app.services.data_service import DataService, DataTransactionError
 from app.utils.auth import require_roles
 from app.utils.responses import response
 
@@ -32,9 +32,8 @@ def put_salary(employee_id):
     if "monthly_wage" not in payload:
         return response(False, message="Validation failed", errors={"monthly_wage": "This field is required"}, status=400)
     try:
-        salary = save_salary(employee_id, session["user"]["id"], payload["monthly_wage"])
-    except ValueError as exc:
-        return response(False, message="Validation failed", errors={"monthly_wage": str(exc)}, status=400)
-    except LookupError as exc:
-        return response(False, message=str(exc), status=404)
+        salary = DataService.update_salary(employee_id, session["user"]["id"], payload["monthly_wage"])
+    except DataTransactionError as exc:
+        status = 404 if "employee_id" in exc.errors else 400
+        return response(False, message=exc.args[0], errors=exc.errors, status=status)
     return response(True, data=serialize_salary(salary), message="Salary structure saved")
