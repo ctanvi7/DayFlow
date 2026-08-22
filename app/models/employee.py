@@ -67,3 +67,19 @@ class Employee(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+    def to_profile_dict(self, include_sensitive: bool = False) -> dict:
+        """Return caller-appropriate profile data without authentication fields."""
+        data = self.to_dict()
+        data.pop("user_id", None)
+        if include_sensitive:
+            data.update(
+                {
+                    "pan_no": self.pan_no,
+                    "uan_no": self.uan_no,
+                    "bank_account_no": self.bank_account_no,
+                    "bank_name": self.bank_name,
+                    "ifsc_code": self.ifsc_code,
+                }
+            )
+        return data
