@@ -31,7 +31,11 @@ document.addEventListener("DOMContentLoaded", () => {
         feedback.textContent = "Password change is required before continuing.";
         return;
       }
-      window.location.assign(user.role === "EMPLOYEE" ? "/attendance" : "/admin/employees");
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      const destination = requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//")
+        ? requestedPath
+        : (user.role === "EMPLOYEE" ? "/attendance" : "/admin/employees");
+      window.location.assign(destination);
     } catch (error) {
       feedback.textContent = error.message;
     } finally {
